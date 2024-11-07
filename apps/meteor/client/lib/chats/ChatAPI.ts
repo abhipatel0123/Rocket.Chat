@@ -79,7 +79,7 @@ export type DataAPI = {
 	canUpdateMessage(message: IMessage): Promise<boolean>;
 	updateMessage(message: Pick<IMessage, '_id' | 't'> & Partial<Omit<IMessage, '_id' | 't'>>, previewUrls?: string[]): Promise<void>;
 	canDeleteMessage(message: IMessage): Promise<boolean>;
-	deleteMessage(mid: IMessage['_id']): Promise<void>;
+	deleteMessage(msgIdOrMsg: IMessage | IMessage['_id']): Promise<void>;
 	getDraft(mid: IMessage['_id'] | undefined): Promise<string | undefined>;
 	discardDraft(mid: IMessage['_id'] | undefined): Promise<void>;
 	saveDraft(mid: IMessage['_id'] | undefined, text: string): Promise<void>;
@@ -101,10 +101,10 @@ export type UploadsAPI = {
 	wipeFailedOnes(): void;
 	cancel(id: Upload['id']): void;
 	send(
-		file: File,
+		file: File[] | File,
 		{ description, msg, t, e2e }: { description?: string; msg?: string; t?: IMessage['t']; e2e?: IMessage['e2e'] },
-		getContent?: (fileId: string, fileUrl: string) => Promise<IE2EEMessage['content']>,
-		fileContent?: { raw: Partial<IUpload>; encrypted: IE2EEMessage['content'] },
+		getContent?: (fileId: string[], fileUrl: string[]) => Promise<IE2EEMessage['content']>,
+		fileContent?: { raw: Partial<IUpload>; encrypted?: { algorithm: string; ciphertext: string } | undefined },
 	): Promise<void>;
 };
 

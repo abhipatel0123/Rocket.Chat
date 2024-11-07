@@ -1,22 +1,29 @@
 import { css } from '@rocket.chat/css-in-js';
 import { Box } from '@rocket.chat/fuselage';
 import { useMutableCallback } from '@rocket.chat/fuselage-hooks';
-import { useTranslation } from '@rocket.chat/ui-contexts';
 import type { DragEvent, ReactElement, ReactNode } from 'react';
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useFormatDateAndTime } from '../../../hooks/useFormatDateAndTime';
 
 type DropTargetOverlayProps = {
 	enabled: boolean;
+	setFilesToUplaod: any;
 	reason?: ReactNode;
-	onFileDrop?: (files: File[]) => void;
 	visible?: boolean;
 	onDismiss?: () => void;
 };
 
-function DropTargetOverlay({ enabled, reason, onFileDrop, visible = true, onDismiss }: DropTargetOverlayProps): ReactElement | null {
-	const t = useTranslation();
+function DropTargetOverlay({
+	enabled,
+	setFilesToUplaod,
+	reason,
+	// onFileDrop, // not using onFileDrop anymore as we use setFilesToUplaod
+	visible = true,
+	onDismiss,
+}: DropTargetOverlayProps): ReactElement | null {
+	const { t } = useTranslation();
 
 	const handleDragLeave = useMutableCallback((event: DragEvent) => {
 		event.stopPropagation();
@@ -55,8 +62,7 @@ function DropTargetOverlay({ enabled, reason, onFileDrop, visible = true, onDism
 				}
 			}
 		}
-
-		onFileDrop?.(files);
+		setFilesToUplaod(files);
 	});
 
 	if (!visible) {
