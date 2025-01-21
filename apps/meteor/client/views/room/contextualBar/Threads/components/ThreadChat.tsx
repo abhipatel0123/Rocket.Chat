@@ -3,8 +3,9 @@ import { isEditedMessage } from '@rocket.chat/core-typings';
 import { Box, CheckBox, Field, FieldLabel, FieldRow } from '@rocket.chat/fuselage';
 import { useUniqueId } from '@rocket.chat/fuselage-hooks';
 import { useMethod, useTranslation, useUserPreference } from '@rocket.chat/ui-contexts';
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
+import ThreadMessageList from './ThreadMessageList';
 import { callbacks } from '../../../../../../lib/callbacks';
 import { ContextualbarContent } from '../../../../../components/Contextualbar';
 import MessageListErrorBoundary from '../../../MessageList/MessageListErrorBoundary';
@@ -16,7 +17,6 @@ import { useChat } from '../../../contexts/ChatContext';
 import { useRoom, useRoomSubscription } from '../../../contexts/RoomContext';
 import { useRoomToolbox } from '../../../contexts/RoomToolboxContext';
 import { DateListProvider } from '../../../providers/DateListProvider';
-import ThreadMessageList from './ThreadMessageList';
 
 type ThreadChatProps = {
 	mainMessage: IThreadMainMessage;
@@ -24,6 +24,7 @@ type ThreadChatProps = {
 
 const ThreadChat = ({ mainMessage }: ThreadChatProps) => {
 	const [fileUploadTriggerProps, fileUploadOverlayProps] = useFileUploadDropTarget();
+	const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
 
 	const sendToChannelPreference = useUserPreference<'always' | 'never' | 'default'>('alsoSendThreadToChannel');
 
@@ -95,7 +96,7 @@ const ThreadChat = ({ mainMessage }: ThreadChatProps) => {
 	return (
 		<ContextualbarContent flexShrink={1} flexGrow={1} paddingInline={0} {...fileUploadTriggerProps}>
 			<DateListProvider>
-				<DropTargetOverlay {...fileUploadOverlayProps} />
+				<DropTargetOverlay {...fileUploadOverlayProps} setFilesToUplaod={setFilesToUpload} />
 				<Box
 					is='section'
 					position='relative'
@@ -119,6 +120,8 @@ const ThreadChat = ({ mainMessage }: ThreadChatProps) => {
 							onNavigateToPreviousMessage={handleNavigateToPreviousMessage}
 							onNavigateToNextMessage={handleNavigateToNextMessage}
 							onUploadFiles={handleUploadFiles}
+							setFilesToUpload={setFilesToUpload}
+							filesToUpload={filesToUpload}
 							tshow={sendToChannel}
 						>
 							<Field marginBlock={8}>

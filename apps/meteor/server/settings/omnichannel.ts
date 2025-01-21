@@ -173,6 +173,15 @@ export const createOmniSettings = () =>
 			enableQuery: omnichannelEnabledQuery,
 		});
 
+		await this.add('Omnichannel_allow_force_close_conversations', false, {
+			type: 'boolean',
+			group: 'Omnichannel',
+			section: 'API',
+			public: true,
+			enableQuery: omnichannelEnabledQuery,
+			alert: 'Omnichannel_allow_force_close_conversations_alert',
+		});
+
 		await this.add('Livechat_conversation_finished_message', '', {
 			type: 'string',
 			group: 'Omnichannel',
@@ -847,15 +856,6 @@ await settingsRegistry.addGroup('SMS', async function () {
 		await this.add('Omnichannel_External_Frame_Encryption_JWK', '', {
 			type: 'string',
 			public: true,
-			enableQuery: {
-				_id: 'Omnichannel_External_Frame_Enabled',
-				value: true,
-			},
-		});
-
-		await this.add('Omnichannel_External_Frame_GenerateKey', 'omnichannelExternalFrameGenerateKey', {
-			type: 'action',
-			actionText: 'Generate_new_key',
 			enableQuery: {
 				_id: 'Omnichannel_External_Frame_Enabled',
 				value: true,

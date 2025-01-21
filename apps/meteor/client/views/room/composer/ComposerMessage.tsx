@@ -1,16 +1,18 @@
 import type { IMessage, ISubscription } from '@rocket.chat/core-typings';
 import { useToastMessageDispatch } from '@rocket.chat/ui-contexts';
 import type { ReactElement, ReactNode } from 'react';
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
+import ComposerSkeleton from './ComposerSkeleton';
 import { LegacyRoomManager } from '../../../../app/ui-utils/client';
 import { useReactiveValue } from '../../../hooks/useReactiveValue';
 import { useChat } from '../contexts/ChatContext';
 import { useRoom } from '../contexts/RoomContext';
-import ComposerSkeleton from './ComposerSkeleton';
 import MessageBox from './messageBox/MessageBox';
 
 export type ComposerMessageProps = {
+	filesToUpload: File[];
+	setFilesToUpload: any;
 	tmid?: IMessage['_id'];
 	children?: ReactNode;
 	subscription?: ISubscription;
@@ -22,6 +24,7 @@ export type ComposerMessageProps = {
 	onNavigateToNextMessage?: () => void;
 	onNavigateToPreviousMessage?: () => void;
 	onUploadFiles?: (files: readonly File[]) => void;
+	onClickSelectAll?: () => void;
 };
 
 const ComposerMessage = ({ tmid, onSend, ...props }: ComposerMessageProps): ReactElement => {
@@ -83,7 +86,6 @@ const ComposerMessage = ({ tmid, onSend, ...props }: ComposerMessageProps): Reac
 	const publicationReady = useReactiveValue(
 		useCallback(() => LegacyRoomManager.getOpenedRoomByRid(room._id)?.streamActive ?? false, [room._id]),
 	);
-
 	if (!publicationReady) {
 		return <ComposerSkeleton />;
 	}

@@ -1,10 +1,12 @@
 import { api, getConnection, getTrashCollection } from '@rocket.chat/core-services';
+import { registerServiceModels } from '@rocket.chat/models';
 import { broker } from '@rocket.chat/network-broker';
-
-import { registerServiceModels } from '../../../../apps/meteor/ee/server/lib/registerServiceModels';
+import { startTracing } from '@rocket.chat/tracing';
 
 (async () => {
-	const db = await getConnection();
+	const { db, client } = await getConnection();
+
+	startTracing({ service: 'ddp-streamer', db: client });
 
 	registerServiceModels(db, await getTrashCollection());
 

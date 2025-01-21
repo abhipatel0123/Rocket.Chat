@@ -1,13 +1,17 @@
 import { useCustomSound } from '@rocket.chat/ui-contexts';
-import { VideoConfPopupBackdrop } from '@rocket.chat/ui-video-conf';
+import type { VideoConfPopupPayload } from '@rocket.chat/ui-video-conf';
+import {
+	VideoConfPopupBackdrop,
+	useVideoConfIsCalling,
+	useVideoConfIsRinging,
+	useVideoConfIncomingCalls,
+} from '@rocket.chat/ui-video-conf';
 import type { ReactElement } from 'react';
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { FocusScope } from 'react-aria';
 
-import type { VideoConfPopupPayload } from '../../../../../contexts/VideoConfContext';
-import { useVideoConfIsCalling, useVideoConfIsRinging, useVideoConfIncomingCalls } from '../../../../../contexts/VideoConfContext';
-import VideoConfPopupPortal from '../../../../../portals/VideoConfPopupPortal';
 import VideoConfPopup from './VideoConfPopup';
+import VideoConfPopupPortal from '../../../../../portals/VideoConfPopupPortal';
 
 const VideoConfPopups = ({ children }: { children?: VideoConfPopupPayload }): ReactElement => {
 	const customSound = useCustomSound();

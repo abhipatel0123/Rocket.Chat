@@ -8,7 +8,7 @@ import type {
 	Document,
 	UpdateFilter,
 	FindOneAndUpdateOptions,
-	ModifyResult,
+	WithId,
 } from 'mongodb';
 
 import type { FindPaginated, IBaseModel } from './IBaseModel';
@@ -16,7 +16,6 @@ import type { FindPaginated, IBaseModel } from './IBaseModel';
 export interface ILivechatVisitorsModel extends IBaseModel<ILivechatVisitor> {
 	findById(_id: string, options?: FindOptions<ILivechatVisitor>): FindCursor<ILivechatVisitor>;
 	getVisitorByToken(token: string, options?: FindOptions<ILivechatVisitor>): Promise<ILivechatVisitor | null>;
-	getVisitorsBetweenDate({ start, end, department }: { start: Date; end: Date; department?: string }): FindCursor<ILivechatVisitor>;
 	findByNameRegexWithExceptionsAndConditions<P extends Document = ILivechatVisitor>(
 		searchTerm: string,
 		exceptions: string[],
@@ -57,7 +56,7 @@ export interface ILivechatVisitorsModel extends IBaseModel<ILivechatVisitor> {
 
 	updateById(_id: string, update: UpdateFilter<ILivechatVisitor>): Promise<Document | UpdateResult>;
 
-	updateOneByIdOrToken(update: UpdateFilter<ILivechatVisitor>, options?: FindOneAndUpdateOptions): Promise<ModifyResult<ILivechatVisitor>>;
+	updateOneByIdOrToken(update: UpdateFilter<ILivechatVisitor>, options?: FindOneAndUpdateOptions): Promise<null | WithId<ILivechatVisitor>>;
 
 	saveGuestEmailPhoneById(_id: string, emails: string[], phones: string[]): Promise<UpdateResult | Document | void>;
 
@@ -77,4 +76,5 @@ export interface ILivechatVisitorsModel extends IBaseModel<ILivechatVisitor> {
 		data: { name?: string; username?: string; email?: string; phone?: string; livechatData: { [k: string]: any } },
 	): Promise<UpdateResult | Document | boolean>;
 	setLastChatById(_id: string, lastChat: Required<ILivechatVisitor['lastChat']>): Promise<UpdateResult>;
+	countVisitorsBetweenDate({ start, end, department }: { start: Date; end: Date; department?: string }): Promise<number>;
 }

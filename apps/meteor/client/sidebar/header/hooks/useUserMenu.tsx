@@ -1,8 +1,8 @@
 import type { IUser } from '@rocket.chat/core-typings';
-import { useMutableCallback } from '@rocket.chat/fuselage-hooks';
+import { useEffectEvent } from '@rocket.chat/fuselage-hooks';
 import type { GenericMenuItemProps } from '@rocket.chat/ui-client';
-import { useLogout, useTranslation } from '@rocket.chat/ui-contexts';
-import React from 'react';
+import { useLogout } from '@rocket.chat/ui-contexts';
+import { useTranslation } from 'react-i18next';
 
 import UserMenuHeader from '../UserMenuHeader';
 import { useAccountItems } from './useAccountItems';
@@ -10,14 +10,14 @@ import { useStatusItems } from './useStatusItems';
 import { useVoipItemsSection } from './useVoipItemsSection';
 
 export const useUserMenu = (user: IUser) => {
-	const t = useTranslation();
+	const { t } = useTranslation();
 
 	const statusItems = useStatusItems();
 	const accountItems = useAccountItems();
 	const voipItemsSection = useVoipItemsSection();
 
 	const logout = useLogout();
-	const handleLogout = useMutableCallback(() => {
+	const handleLogout = useEffectEvent(() => {
 		logout();
 	});
 

@@ -1,8 +1,8 @@
 import { IconButton, SidebarV2Item, SidebarV2ItemAvatarWrapper, SidebarV2ItemMenu, SidebarV2ItemTitle } from '@rocket.chat/fuselage';
-import { useEffectEvent, usePrefersReducedMotion } from '@rocket.chat/fuselage-hooks';
+import { usePrefersReducedMotion } from '@rocket.chat/fuselage-hooks';
 import type { Keys as IconName } from '@rocket.chat/icons';
-import type { ReactElement } from 'react';
-import React, { memo, useState } from 'react';
+import type { HTMLAttributes, ReactElement } from 'react';
+import { memo, useState } from 'react';
 
 type CondensedProps = {
 	title: string;
@@ -17,22 +17,18 @@ type CondensedProps = {
 	selected?: boolean;
 	badges?: ReactElement;
 	clickable?: boolean;
-};
+} & Omit<HTMLAttributes<HTMLAnchorElement>, 'is'>;
 
-const Condensed = ({ icon, title, avatar, actions, href, unread, menu, badges, selected }: CondensedProps) => {
+const Condensed = ({ icon, title, avatar, actions, unread, menu, badges, ...props }: CondensedProps) => {
 	const [menuVisibility, setMenuVisibility] = useState(!!window.DISABLE_ANIMATION);
-
 	const isReduceMotionEnabled = usePrefersReducedMotion();
 
-	const handleMenu = useEffectEvent((e) => {
-		setMenuVisibility(e.target.offsetWidth > 0 && Boolean(menu));
-	});
 	const handleMenuEvent = {
-		[isReduceMotionEnabled ? 'onMouseEnter' : 'onTransitionEnd']: handleMenu,
+		[isReduceMotionEnabled ? 'onMouseEnter' : 'onTransitionEnd']: setMenuVisibility,
 	};
 
 	return (
-		<SidebarV2Item href={href} selected={selected}>
+		<SidebarV2Item {...props}>
 			{avatar && <SidebarV2ItemAvatarWrapper>{avatar}</SidebarV2ItemAvatarWrapper>}
 			{icon && icon}
 			<SidebarV2ItemTitle unread={unread}>{title}</SidebarV2ItemTitle>

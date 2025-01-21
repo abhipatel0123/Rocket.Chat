@@ -61,7 +61,7 @@ export class HomeSidenav {
 
 	// Note: this is different from openChat because queued chats are not searchable
 	getQueuedChat(name: string): Locator {
-		return this.page.locator('[data-qa="sidebar-item-title"]', { hasText: name }).first();
+		return this.page.locator('[data-qa="sidebar-item-title"]', { hasText: new RegExp(`^${name}$`) }).first();
 	}
 
 	get accountProfileOption(): Locator {
@@ -79,14 +79,14 @@ export class HomeSidenav {
 		const sidebarItem = this.getSidebarItemByName(name);
 		await sidebarItem.focus();
 		await sidebarItem.locator('.rcx-sidebar-item__menu').click();
-		await this.page.getByRole('option', { name: 'Mark Unread' }).click();
+		await this.page.getByRole('menuitem', { name: 'Mark Unread' }).click();
 	}
 
 	async selectPriority(name: string, priority: string) {
 		const sidebarItem = this.getSidebarItemByName(name);
 		await sidebarItem.focus();
 		await sidebarItem.locator('.rcx-sidebar-item__menu').click();
-		await this.page.locator(`li[value="${priority}"]`).click();
+		await this.page.getByRole('menuitem', { name: priority }).click();
 	}
 
 	async openAdministrationByLabel(text: string): Promise<void> {
@@ -175,7 +175,7 @@ export class HomeSidenav {
 
 	async createEncryptedChannel(name: string) {
 		await this.openNewByLabel('Channel');
-		await this.inputChannelName.type(name);
+		await this.inputChannelName.fill(name);
 		await this.advancedSettingsAccordion.click();
 		await this.checkboxEncryption.click();
 		await this.btnCreate.click();
