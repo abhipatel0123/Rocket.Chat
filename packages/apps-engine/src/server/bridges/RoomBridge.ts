@@ -1,10 +1,10 @@
+import { BaseBridge } from './BaseBridge';
 import type { IMessage, IMessageRaw } from '../../definition/messages';
 import type { IRoom } from '../../definition/rooms';
 import type { IUser } from '../../definition/users';
 import { PermissionDeniedError } from '../errors/PermissionDeniedError';
 import { AppPermissionManager } from '../managers/AppPermissionManager';
 import { AppPermissions } from '../permissions/AppPermissions';
-import { BaseBridge } from './BaseBridge';
 
 export const GetMessagesSortableFields = ['createdAt'] as const;
 
@@ -12,6 +12,7 @@ export type GetMessagesOptions = {
     limit: number;
     skip: number;
     sort: Record<(typeof GetMessagesSortableFields)[number], 'asc' | 'desc'>;
+    showThreadMessages: boolean;
 };
 
 export abstract class RoomBridge extends BaseBridge {
@@ -111,6 +112,18 @@ export abstract class RoomBridge extends BaseBridge {
         }
     }
 
+    public async doGetUnreadByUser(roomId: string, uid: string, options: GetMessagesOptions, appId: string): Promise<IMessageRaw[]> {
+        if (this.hasReadPermission(appId)) {
+            return this.getUnreadByUser(roomId, uid, options, appId);
+        }
+    }
+
+    public async doGetUserUnreadMessageCount(roomId: string, uid: string, appId: string): Promise<number> {
+        if (this.hasReadPermission(appId)) {
+            return this.getUserUnreadMessageCount(roomId, uid, appId);
+        }
+    }
+
     protected abstract create(room: IRoom, members: Array<string>, appId: string): Promise<string>;
 
     protected abstract getById(roomId: string, appId: string): Promise<IRoom>;
@@ -146,6 +159,10 @@ export abstract class RoomBridge extends BaseBridge {
     protected abstract getMessages(roomId: string, options: GetMessagesOptions, appId: string): Promise<IMessageRaw[]>;
 
     protected abstract removeUsers(roomId: string, usernames: Array<string>, appId: string): Promise<void>;
+
+    protected abstract getUnreadByUser(roomId: string, uid: string, options: GetMessagesOptions, appId: string): Promise<IMessageRaw[]>;
+
+    protected abstract getUserUnreadMessageCount(roomId: string, uid: string, appId: string): Promise<number>;
 
     private hasWritePermission(appId: string): boolean {
         if (AppPermissionManager.hasPermission(appId, AppPermissions.room.write)) {

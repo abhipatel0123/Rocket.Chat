@@ -1,9 +1,8 @@
 import { css } from '@rocket.chat/css-in-js';
 import { Box, Button, Icon } from '@rocket.chat/fuselage';
-import { useUniqueId } from '@rocket.chat/fuselage-hooks';
 import type { IFederationPublicRooms } from '@rocket.chat/rest-typings';
-import { useTranslation } from '@rocket.chat/ui-contexts';
-import React from 'react';
+import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type FederatedRoomListItemProps = IFederationPublicRooms & {
 	disabled: boolean;
@@ -23,8 +22,8 @@ const FederatedRoomListItem = ({
 	canJoin,
 	disabled,
 }: FederatedRoomListItemProps) => {
-	const t = useTranslation();
-	const nameId = useUniqueId();
+	const { t } = useTranslation();
+	const nameId = useId();
 
 	return (
 		<Box mb={16} pi={24} is='li' display='flex' flexDirection='column' w='full' name={canonicalAlias} aria-labelledby={nameId}>

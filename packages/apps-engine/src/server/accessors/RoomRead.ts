@@ -6,7 +6,10 @@ import type { RoomBridge } from '../bridges';
 import { type GetMessagesOptions, GetMessagesSortableFields } from '../bridges/RoomBridge';
 
 export class RoomRead implements IRoomRead {
-    constructor(private roomBridge: RoomBridge, private appId: string) {}
+    constructor(
+        private roomBridge: RoomBridge,
+        private appId: string,
+    ) {}
 
     public getById(id: string): Promise<IRoom> {
         return this.roomBridge.doGetById(id, this.appId);
@@ -30,6 +33,7 @@ export class RoomRead implements IRoomRead {
         }
 
         options.limit ??= 100;
+        options.showThreadMessages ??= true;
 
         if (options.sort) {
             this.validateSort(options.sort);
@@ -56,6 +60,28 @@ export class RoomRead implements IRoomRead {
 
     public getLeaders(roomId: string): Promise<Array<IUser>> {
         return this.roomBridge.doGetLeaders(roomId, this.appId);
+    }
+
+    public async getUnreadByUser(roomId: string, uid: string, options: Partial<GetMessagesOptions> = {}): Promise<IMessageRaw[]> {
+        const { limit = 100, sort = { createdAt: 'asc' }, skip = 0, showThreadMessages = true } = options;
+
+        if (typeof roomId !== 'string' || roomId.trim().length === 0) {
+            throw new Error('Invalid roomId: must be a non-empty string');
+        }
+
+        if (!Number.isFinite(limit) || limit <= 0 || limit > 100) {
+            throw new Error(`Invalid limit provided. Expected number between 1 and 100, got ${limit}`);
+        }
+
+        this.validateSort(sort);
+
+        const completeOptions: GetMessagesOptions = { limit, sort, skip, showThreadMessages };
+
+        return this.roomBridge.doGetUnreadByUser(roomId, uid, completeOptions, this.appId);
+    }
+
+    public getUserUnreadMessageCount(roomId: string, uid: string): Promise<number> {
+        return this.roomBridge.doGetUserUnreadMessageCount(roomId, uid, this.appId);
     }
 
     // If there are any invalid fields or values, throw

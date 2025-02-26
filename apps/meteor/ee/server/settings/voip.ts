@@ -5,7 +5,7 @@ export function addSettings(): Promise<void> {
 		await this.with(
 			{
 				enterprise: true,
-				modules: ['voip-enterprise'],
+				modules: ['teams-voip'],
 			},
 			async function () {
 				await this.add('VoIP_TeamCollab_Enabled', false, {
@@ -29,7 +29,7 @@ export function addSettings(): Promise<void> {
 
 				await this.add('VoIP_TeamCollab_FreeSwitch_Password', '', {
 					type: 'password',
-					public: true,
+					secret: true,
 					invalidValue: '',
 				});
 

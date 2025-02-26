@@ -1,8 +1,8 @@
-import type { IMessage, IRoom, IUser, RoomAdminFieldsType, IUpload, IE2EEMessage, ITeam } from '@rocket.chat/core-typings';
+import type { IMessage, IRoom, IUser, RoomAdminFieldsType, IUpload, IE2EEMessage, ITeam, IRole } from '@rocket.chat/core-typings';
 
+import { ajv } from './Ajv';
 import type { PaginatedRequest } from '../helpers/PaginatedRequest';
 import type { PaginatedResult } from '../helpers/PaginatedResult';
-import { ajv } from './Ajv';
 
 type RoomsAutoCompleteChannelAndPrivateProps = { selector: string };
 
@@ -357,6 +357,12 @@ type RoomsSaveRoomSettingsProps = {
 		defaultValue?: boolean;
 		favorite?: boolean;
 	};
+	retentionEnabled?: boolean;
+	retentionMaxAge?: number;
+	retentionExcludePinned?: boolean;
+	retentionFilesOnly?: boolean;
+	retentionIgnoreThreads?: boolean;
+	retentionOverrideGlobal?: boolean;
 };
 
 const RoomsSaveRoomSettingsSchema = {
@@ -423,6 +429,12 @@ const RoomsSaveRoomSettingsSchema = {
 			},
 			nullable: true,
 		},
+		retentionEnabled: { type: 'boolean', nullable: true },
+		retentionMaxAge: { type: 'number', nullable: true },
+		retentionExcludePinned: { type: 'boolean', nullable: true },
+		retentionFilesOnly: { type: 'boolean', nullable: true },
+		retentionIgnoreThreads: { type: 'boolean', nullable: true },
+		retentionOverrideGlobal: { type: 'boolean', nullable: true },
 	},
 	required: ['rid'],
 	additionalProperties: false,
@@ -598,6 +610,97 @@ const roomsCleanHistorySchema = {
 
 export const isRoomsCleanHistoryProps = ajv.compile<RoomsCleanHistoryProps>(roomsCleanHistorySchema);
 
+type RoomsOpenProps = {
+	roomId: string;
+};
+
+const roomsOpenSchema = {
+	type: 'object',
+	properties: {
+		roomId: {
+			type: 'string',
+			minLength: 1,
+		},
+	},
+	required: ['roomId'],
+	additionalProperties: false,
+};
+
+export const isRoomsOpenProps = ajv.compile<RoomsOpenProps>(roomsOpenSchema);
+
+type MembersOrderedByRoleProps = {
+	roomId?: IRoom['_id'];
+	roomName?: IRoom['name'];
+	status?: string[];
+	filter?: string;
+};
+
+export type RoomsMembersOrderedByRoleProps = PaginatedRequest<MembersOrderedByRoleProps>;
+
+const membersOrderedByRoleRolePropsSchema = {
+	properties: {
+		roomId: {
+			type: 'string',
+		},
+		roomName: {
+			type: 'string',
+		},
+		status: {
+			type: 'array',
+			items: {
+				type: 'string',
+			},
+		},
+		filter: {
+			type: 'string',
+		},
+		count: {
+			type: 'integer',
+		},
+		offset: {
+			type: 'integer',
+		},
+		sort: {
+			type: 'string',
+		},
+	},
+	oneOf: [{ required: ['roomId'] }, { required: ['roomName'] }],
+	additionalProperties: false,
+};
+
+export const isRoomsMembersOrderedByRoleProps = ajv.compile<RoomsMembersOrderedByRoleProps>(membersOrderedByRoleRolePropsSchema);
+
+type RoomsHideProps = {
+	roomId: string;
+};
+
+const roomsHideSchema = {
+	type: 'object',
+	properties: {
+		roomId: {
+			type: 'string',
+			minLength: 1,
+		},
+	},
+	required: ['roomId'],
+	additionalProperties: false,
+};
+
+export const isRoomsHideProps = ajv.compile<RoomsHideProps>(roomsHideSchema);
+
+type RoomsMediaEditProps = {
+	fileName: string;
+};
+
+const mediaEditSchema = {
+	type: 'object',
+	properties: { fileName: { type: 'string' } },
+	required: ['fileName'],
+	additionalProperties: false,
+};
+
+export const isMediaEditProps = ajv.compile<RoomsMediaEditProps>(mediaEditSchema);
+
 export type RoomsEndpoints = {
 	'/v1/rooms.autocomplete.channelAndPrivate': {
 		GET: (params: RoomsAutoCompleteChannelAndPrivateProps) => {
@@ -702,6 +805,10 @@ export type RoomsEndpoints = {
 		}) => { message: IMessage | null };
 	};
 
+	'/v1/rooms.mediaEdit/:rid/:fileId': {
+		POST: (params: { fileName: string }) => void;
+	};
+
 	'/v1/rooms.saveNotification': {
 		POST: (params: { roomId: string; notifications: Notifications }) => void;
 	};
@@ -763,5 +870,19 @@ export type RoomsEndpoints = {
 		GET: (params: RoomsImagesProps) => PaginatedResult<{
 			files: IUpload[];
 		}>;
+	};
+
+	'/v1/rooms.open': {
+		POST: (params: RoomsOpenProps) => void;
+	};
+
+	'/v1/rooms.membersOrderedByRole': {
+		GET: (params: RoomsMembersOrderedByRoleProps) => PaginatedResult<{
+			members: (IUser & { roles?: IRole['_id'][] })[];
+		}>;
+	};
+
+	'/v1/rooms.hide': {
+		POST: (params: RoomsHideProps) => void;
 	};
 };

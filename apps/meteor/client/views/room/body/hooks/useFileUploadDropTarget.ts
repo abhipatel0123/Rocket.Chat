@@ -1,19 +1,21 @@
-import { useMutableCallback } from '@rocket.chat/fuselage-hooks';
+import { useEffectEvent } from '@rocket.chat/fuselage-hooks';
 import { useSetting, useTranslation, useUser } from '@rocket.chat/ui-contexts';
-import type { ReactNode } from 'react';
-import type React from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import { useCallback, useMemo } from 'react';
 
+import { useDropTarget } from './useDropTarget';
 import { useIsRoomOverMacLimit } from '../../../../hooks/omnichannel/useIsRoomOverMacLimit';
 import { useReactiveValue } from '../../../../hooks/useReactiveValue';
+import type { UploadsAPI } from '../../../../lib/chats/ChatAPI';
 import { roomCoordinator } from '../../../../lib/rooms/roomCoordinator';
 import { useChat } from '../../contexts/ChatContext';
 import { useRoom, useRoomSubscription } from '../../contexts/RoomContext';
-import { useDropTarget } from './useDropTarget';
 
-export const useFileUploadDropTarget = (): readonly [
+export const useFileUploadDropTarget = (
+	uploadsStore: UploadsAPI,
+): readonly [
 	fileUploadTriggerProps: {
-		onDragEnter: (event: React.DragEvent<Element>) => void;
+		onDragEnter: (event: DragEvent<Element>) => void;
 	},
 	fileUploadOverlayProps: {
 		visible: boolean;
@@ -29,7 +31,7 @@ export const useFileUploadDropTarget = (): readonly [
 
 	const t = useTranslation();
 
-	const fileUploadEnabled = useSetting<boolean>('FileUpload_Enabled');
+	const fileUploadEnabled = useSetting('FileUpload_Enabled', true);
 	const user = useUser();
 	const fileUploadAllowedForUser = useReactiveValue(
 		useCallback(() => !roomCoordinator.readOnly(room._id, { username: user?.username }), [room._id, user?.username]),
@@ -38,7 +40,7 @@ export const useFileUploadDropTarget = (): readonly [
 	const chat = useChat();
 	const subscription = useRoomSubscription();
 
-	const onFileDrop = useMutableCallback(async (files: File[]) => {
+	const onFileDrop = useEffectEvent(async (files: File[]) => {
 		const { getMimeType } = await import('../../../../../app/utils/lib/mimeTypes');
 		const getUniqueFiles = () => {
 			const uniqueFiles: File[] = [];
@@ -59,7 +61,7 @@ export const useFileUploadDropTarget = (): readonly [
 			return file;
 		});
 
-		chat?.flows.uploadFiles(uploads);
+		chat?.flows.uploadFiles({ files: uploads, uploadsStore });
 	});
 
 	const allOverlayProps = useMemo(() => {

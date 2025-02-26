@@ -1,18 +1,19 @@
 import { Apps } from '@rocket.chat/apps';
 import { api, Message } from '@rocket.chat/core-services';
-import type { IMessage, IRoom } from '@rocket.chat/core-typings';
-import { Messages } from '@rocket.chat/models';
+import { isE2EEMessage, type IMessage, type IRoom, type IUpload } from '@rocket.chat/core-typings';
+import { Messages, Uploads } from '@rocket.chat/models';
 import { Match, check } from 'meteor/check';
 
+import { parseUrlsInMessage } from './parseUrlsInMessage';
 import { isRelativeURL } from '../../../../lib/utils/isRelativeURL';
 import { isURL } from '../../../../lib/utils/isURL';
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
 import { FileUpload } from '../../../file-upload/server';
+import { parseMultipleFilesIntoMessageAttachments } from '../../../file-upload/server/methods/sendFileMessage';
 import { settings } from '../../../settings/server';
 import { afterSaveMessage } from '../lib/afterSaveMessage';
 import { notifyOnRoomChangedById, notifyOnMessageChange } from '../lib/notifyListener';
 import { validateCustomMessageFields } from '../lib/validateCustomMessageFields';
-import { parseUrlsInMessage } from './parseUrlsInMessage';
 
 // TODO: most of the types here are wrong, but I don't want to change them now
 
@@ -215,9 +216,23 @@ export function prepareMessageObject(
 /**
  * Validates and sends the message object.
  */
-export const sendMessage = async function (user: any, message: any, room: any, upsert = false, previewUrls?: string[]) {
+export const sendMessage = async (
+	user: any,
+	message: any,
+	room: any,
+	upsert = false,
+	previewUrls?: string[],
+	uploadIdsToConfirm?: string[],
+) => {
 	if (!user || !message || !room._id) {
 		return false;
+	}
+
+	if (uploadIdsToConfirm !== undefined && !isE2EEMessage(message)) {
+		const filesToConfirm: Partial<IUpload>[] = await Uploads.findByIds(uploadIdsToConfirm).toArray();
+		const { files, attachments } = await parseMultipleFilesIntoMessageAttachments(filesToConfirm, message.rid, user);
+		message.files = files;
+		message.attachments = attachments;
 	}
 
 	await validateMessage(message, room, user);
@@ -284,13 +299,17 @@ export const sendMessage = async function (user: any, message: any, room: any, u
 	}
 
 	if (Apps.self?.isLoaded()) {
-		// This returns a promise, but it won't mutate anything about the message
-		// so, we don't really care if it is successful or fails
-		void Apps.getBridges()?.getListenerBridge().messageEvent('IPostMessageSent', message);
+		// If the message has a type (system message), we should notify the listener about it
+		const messageEvent = message.t ? 'IPostSystemMessageSent' : 'IPostMessageSent';
+		void Apps.getBridges()?.getListenerBridge().messageEvent(messageEvent, message);
 	}
 
 	// TODO: is there an opportunity to send returned data to notifyOnMessageChange?
 	await afterSaveMessage(message, room);
+
+	if (uploadIdsToConfirm !== undefined) {
+		await Uploads.confirmTemporaryFiles(uploadIdsToConfirm, user._id);
+	}
 
 	void notifyOnMessageChange({ id: message._id });
 

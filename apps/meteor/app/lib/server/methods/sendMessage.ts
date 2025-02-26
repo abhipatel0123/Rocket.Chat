@@ -1,8 +1,10 @@
 import { api } from '@rocket.chat/core-services';
 import type { AtLeast, IMessage, IUser } from '@rocket.chat/core-typings';
 import type { ServerMethods } from '@rocket.chat/ddp-client';
+import type { RocketchatI18nKeys } from '@rocket.chat/i18n';
 import { Messages, Users } from '@rocket.chat/models';
-import { check } from 'meteor/check';
+import type { TOptions } from 'i18next';
+import { check, Match } from 'meteor/check';
 import { Meteor } from 'meteor/meteor';
 import moment from 'moment';
 
@@ -10,13 +12,19 @@ import { i18n } from '../../../../server/lib/i18n';
 import { SystemLogger } from '../../../../server/lib/logger/system';
 import { canSendMessageAsync } from '../../../authorization/server/functions/canSendMessage';
 import { hasPermissionAsync } from '../../../authorization/server/functions/hasPermission';
+import { applyAirGappedRestrictionsValidation } from '../../../license/server/airGappedRestrictionsWrapper';
 import { metrics } from '../../../metrics/server';
 import { settings } from '../../../settings/server';
 import { MessageTypes } from '../../../ui-utils/server';
 import { sendMessage } from '../functions/sendMessage';
 import { RateLimiter } from '../lib';
 
-export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMessage, 'rid'>, previewUrls?: string[]) {
+export async function executeSendMessage(
+	uid: IUser['_id'],
+	message: AtLeast<IMessage, 'rid'>,
+	previewUrls?: string[],
+	uploadIdsToConfirm?: string[],
+) {
 	if (message.tshow && !message.tmid) {
 		throw new Meteor.Error('invalid-params', 'tshow provided but missing tmid', {
 			method: 'sendMessage',
@@ -93,14 +101,14 @@ export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMe
 		}
 
 		metrics.messagesSent.inc(); // TODO This line needs to be moved to it's proper place. See the comments on: https://github.com/RocketChat/Rocket.Chat/pull/5736
-		return await sendMessage(user, message, room, false, previewUrls);
+		return await sendMessage(user, message, room, false, previewUrls, uploadIdsToConfirm);
 	} catch (err: any) {
 		SystemLogger.error({ msg: 'Error sending message:', err });
 
-		const errorMessage = typeof err === 'string' ? err : err.error || err.message;
-		const errorContext = err.details ?? {};
+		const errorMessage: RocketchatI18nKeys = typeof err === 'string' ? err : err.error || err.message;
+		const errorContext: TOptions = err.details ?? {};
 		void api.broadcast('notify.ephemeralMessage', uid, message.rid, {
-			msg: i18n.t(errorMessage, errorContext, user.language),
+			msg: i18n.t(errorMessage, { ...errorContext, lng: user.language }),
 		});
 
 		if (typeof err === 'string') {
@@ -114,13 +122,32 @@ export async function executeSendMessage(uid: IUser['_id'], message: AtLeast<IMe
 declare module '@rocket.chat/ddp-client' {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	interface ServerMethods {
-		sendMessage(message: AtLeast<IMessage, '_id' | 'rid' | 'msg'>, previewUrls?: string[]): any;
+		sendMessage(message: AtLeast<IMessage, '_id' | 'rid' | 'msg'>, previewUrls?: string[], uploadIdsToConfirm?: string[]): any;
 	}
 }
 
 Meteor.methods<ServerMethods>({
-	async sendMessage(message, previewUrls) {
-		check(message, Object);
+	async sendMessage(message, previewUrls, uploadIdsToConfirm) {
+		check(message, {
+			_id: Match.Maybe(String),
+			rid: Match.Maybe(String),
+			msg: Match.Maybe(String),
+			tmid: Match.Maybe(String),
+			tshow: Match.Maybe(Boolean),
+			ts: Match.Maybe(Date),
+			t: Match.Maybe(String),
+			otrAck: Match.Maybe(String),
+			bot: Match.Maybe(Object),
+			content: Match.Maybe(Object),
+			e2e: Match.Maybe(String),
+			e2eMentions: Match.Maybe(Object),
+			customFields: Match.Maybe(Object),
+			federation: Match.Maybe(Object),
+			groupable: Match.Maybe(Boolean),
+			sentByEmail: Match.Maybe(Boolean),
+		});
+
+		check(uploadIdsToConfirm, Match.Maybe([String]));
 
 		const uid = Meteor.userId();
 		if (!uid) {
@@ -134,9 +161,9 @@ Meteor.methods<ServerMethods>({
 		}
 
 		try {
-			return await executeSendMessage(uid, message, previewUrls);
+			return await applyAirGappedRestrictionsValidation(() => executeSendMessage(uid, message, previewUrls, uploadIdsToConfirm));
 		} catch (error: any) {
-			if ((error.error || error.message) === 'error-not-allowed') {
+			if (['error-not-allowed', 'restricted-workspace'].includes(error.error || error.message)) {
 				throw new Meteor.Error(error.error || error.message, error.reason, {
 					method: 'sendMessage',
 				});

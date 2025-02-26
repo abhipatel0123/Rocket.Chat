@@ -6,19 +6,19 @@ import { MessageComposerAction, MessageComposerActionsDivider } from '@rocket.ch
 import type { TranslationKey } from '@rocket.chat/ui-contexts';
 import { useTranslation, useLayoutHiddenActions } from '@rocket.chat/ui-contexts';
 import type { ComponentProps, MouseEvent } from 'react';
-import React, { memo } from 'react';
+import { memo } from 'react';
 
-import { messageBox } from '../../../../../../app/ui-utils/client';
-import { isTruthy } from '../../../../../../lib/isTruthy';
-import { useMessageboxAppsActionButtons } from '../../../../../hooks/useAppActionButtons';
-import { useChat } from '../../../contexts/ChatContext';
-import { useRoom } from '../../../contexts/RoomContext';
 import { useAudioMessageAction } from './hooks/useAudioMessageAction';
 import { useCreateDiscussionAction } from './hooks/useCreateDiscussionAction';
 import { useFileUploadAction } from './hooks/useFileUploadAction';
 import { useShareLocationAction } from './hooks/useShareLocationAction';
 import { useVideoMessageAction } from './hooks/useVideoMessageAction';
 import { useWebdavActions } from './hooks/useWebdavActions';
+import { messageBox } from '../../../../../../app/ui-utils/client';
+import { isTruthy } from '../../../../../../lib/isTruthy';
+import { useMessageboxAppsActionButtons } from '../../../../../hooks/useMessageboxAppsActionButtons';
+import { useChat } from '../../../contexts/ChatContext';
+import { useRoom } from '../../../contexts/RoomContext';
 
 type MessageBoxActionsToolbarProps = {
 	canSend: boolean;
@@ -28,6 +28,7 @@ type MessageBoxActionsToolbarProps = {
 	isRecording: boolean;
 	rid: IRoom['_id'];
 	tmid?: IMessage['_id'];
+	isEditing: boolean;
 };
 
 const isHidden = (hiddenActions: Array<string>, action: GenericMenuItemProps) => {
@@ -45,6 +46,7 @@ const MessageBoxActionsToolbar = ({
 	tmid,
 	variant = 'large',
 	isMicrophoneDenied,
+	isEditing = false,
 }: MessageBoxActionsToolbarProps) => {
 	const t = useTranslation();
 	const chatContext = useChat();
@@ -54,11 +56,12 @@ const MessageBoxActionsToolbar = ({
 	}
 
 	const room = useRoom();
+	const uploadsStore = tmid ? chatContext.threadUploads : chatContext.uploads;
 
 	const audioMessageAction = useAudioMessageAction(!canSend || typing || isRecording || isMicrophoneDenied, isMicrophoneDenied);
 	const videoMessageAction = useVideoMessageAction(!canSend || typing || isRecording);
-	const fileUploadAction = useFileUploadAction(!canSend || typing || isRecording);
-	const webdavActions = useWebdavActions();
+	const fileUploadAction = useFileUploadAction(!canSend || isRecording || isEditing, uploadsStore);
+	const webdavActions = useWebdavActions(uploadsStore);
 	const createDiscussionAction = useCreateDiscussionAction(room);
 	const shareLocationAction = useShareLocationAction(room, tmid);
 
@@ -81,8 +84,8 @@ const MessageBoxActionsToolbar = ({
 	createNew.push(allActions.createDiscussionAction);
 
 	if (variant === 'small') {
-		featured.push(allActions.audioMessageAction);
-		createNew.push(allActions.videoMessageAction, allActions.fileUploadAction);
+		featured.push(allActions.audioMessageAction, allActions.fileUploadAction);
+		createNew.push(allActions.videoMessageAction);
 	} else {
 		featured.push(allActions.audioMessageAction, allActions.videoMessageAction, allActions.fileUploadAction);
 	}

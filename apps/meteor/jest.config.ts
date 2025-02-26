@@ -18,7 +18,6 @@ export default {
 
 			moduleNameMapper: {
 				'^react($|/.+)': '<rootDir>/node_modules/react$1',
-				'^react-dom/client$': '<rootDir>/node_modules/react-dom$1',
 				'^react-dom($|/.+)': '<rootDir>/node_modules/react-dom$1',
 				'^react-i18next($|/.+)': '<rootDir>/node_modules/react-i18next$1',
 				'^@tanstack/(.+)': '<rootDir>/node_modules/@tanstack/$1',
@@ -35,8 +34,12 @@ export default {
 				'<rootDir>/app/livechat/server/business-hour/**/*.spec.ts?(x)',
 				'<rootDir>/app/livechat/server/api/**/*.spec.ts',
 				'<rootDir>/ee/app/authorization/server/validateUserRoles.spec.ts',
+				'<rootDir>/ee/app/license/server/**/*.spec.ts',
+				'<rootDir>/ee/server/patches/**/*.spec.ts',
 				'<rootDir>/app/cloud/server/functions/supportedVersionsToken/**.spec.ts',
 				'<rootDir>/app/utils/lib/**.spec.ts',
+				'<rootDir>/app/api/server/**.spec.ts',
+				'<rootDir>/app/api/server/middlewares/**.spec.ts',
 			],
 		},
 	],
